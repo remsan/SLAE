@@ -32,7 +32,7 @@ it is of some value, but I make ABSOLUTELY NO WARRANTY OF ANY KIND.
 #include <string.h>
 #include <unistd.h>
 #include <stdlib.h>
-
+#include <stdio.h>
 
 
 int	main() {
@@ -80,7 +80,7 @@ int	main() {
 		inp[p] = buf[p];
 	free(buf);
 	// Now run the code
-	int (*ret)() = (int(*))inp;
+	int (*ret)() = (int(*)())inp;
 	ret();
 	exit(0);
 }
